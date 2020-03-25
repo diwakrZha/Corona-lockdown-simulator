@@ -197,7 +197,7 @@ else:
  
 selectedCountry= st.selectbox("Country: ",df_corona['Country/Region'].unique().tolist(),index=54)
 Contacts=st.slider('< Less - |relative interaction| - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
-st.write('The green curve should bend down & the hills should be spread out')
+st.write('To reduce the impact, hills should spread out & the green line should bend down')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
 
