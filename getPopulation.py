@@ -1,5 +1,4 @@
 import json
-import world_data
 
 with open('country-by-population.json') as f:
     countryByPopulationJson = json.loads(f.read())
@@ -17,24 +16,10 @@ countryPopulation['Korea, South'] = countryPopulation['South Korea']
 countryPopulation['Korea, North'] = countryPopulation['North Korea']
 countryPopulation['Taiwan*'] = 23574274
 countryPopulation['Serbia'] = 7057666
-# ...
-
-countries, provinces = world_data.get_countries_provinces()
-
-cp2 = {}
-for country in countries:
-    if country in countryPopulation:
-        cp2[country] = countryPopulation[country]
-    else:
-        for country2 in countryPopulation:
-            if country in country2:
-                cp2[country] = countryPopulation[country2]
 
 def get_population(country):
-    return cp2[country]
+    return countryPopulation[country]
 
-def get_all_population_data():
-    return cp2
 
 #if __name__ == '__main__':
 #    
