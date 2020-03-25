@@ -196,8 +196,8 @@ else:
     plotScale = 'log'
  
 selectedCountry= st.selectbox("Country: ",df_corona['Country/Region'].unique().tolist(),index=54)
-Contacts=st.slider('< Less|relative interaction| More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
-st.write('Take the hills away from green serpent')
+Contacts=st.slider('< Less - |relative interaction| - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
+st.write('The green curve should bend down & the hills should be spread out')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
 
@@ -211,7 +211,7 @@ else:
     
 projectionDays=st.sidebar.number_input('Days to project in future', min_value=5, max_value=2000, value=projVal, step=10,key=None)
 ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=14.6,key=None)
-rateICU=float(st.sidebar.number_input('Critical prob.', min_value=0.00, max_value=1.000, value=0.02, step=0.01,key=None))
+rateICU=float(st.sidebar.number_input('Critical prob.', min_value=0.00, max_value=1.000, value=0.01, step=0.01,key=None))
 
 #st.sidebar.markdown("Select log to show critical cases")        
       
