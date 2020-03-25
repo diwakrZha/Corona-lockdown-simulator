@@ -214,7 +214,7 @@ rateICU=float(st.sidebar.number_input('Critical prob.', min_value=0.00, max_valu
 
 #st.sidebar.markdown("Select log to show critical cases")        
       
-mk3=(<a href="https://en.wikipedia.org/wiki/List_of_countries_by_hospital_beds" target="_blank">List of ICUs</a>)
+mk3=('<a href="https://en.wikipedia.org/wiki/List_of_countries_by_hospital_beds" target="_blank">List of ICUs</a>')
 st.sidebar.markdown(mk3,unsafe_allow_html=True)
 
 
@@ -423,7 +423,7 @@ st.altair_chart(d,use_container_width=True)
 
 
 
-mk4=(<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">List of ICUs</a>)
+mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">List of ICUs</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
 
