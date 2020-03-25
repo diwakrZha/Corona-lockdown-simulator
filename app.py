@@ -423,7 +423,7 @@ st.altair_chart(d,use_container_width=True)
 
 
 
-mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">List of ICUs</a>')
+mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">Get in touch</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
 
