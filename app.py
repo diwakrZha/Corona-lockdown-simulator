@@ -213,12 +213,11 @@ ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0
 rateICU=float(st.sidebar.number_input('Critical prob.', min_value=0.00, max_value=1.000, value=0.02, step=0.01,key=None))
 
 #st.sidebar.markdown("Select log to show critical cases")        
+      
+mk3=(<a href="https://en.wikipedia.org/wiki/List_of_countries_by_hospital_beds" target="_blank">List of ICUs</a>)
+st.sidebar.markdown(mk3,unsafe_allow_html=True)
 
-url = 'https://en.wikipedia.org/wiki/List_of_countries_by_hospital_beds'
 
-if st.sidebar.button('List of ICUs'):
-    webbrowser.open_new_tab(url)
-    
 def getContactFunc(Contacts, selectedCountry, ICUbeds):
     
     population = getPopulation.get_population(selectedCountry)
@@ -424,11 +423,8 @@ st.altair_chart(d,use_container_width=True)
 
 
 
-expectedChartTitle_placeholder10 = st.empty()
-url2='https://www.linkedin.com/in/diwakerzha/'
-if expectedChartTitle_placeholder10.button('Get in touch'):
-    webbrowser.open_new_tab(url2)
-    
+mk4=(<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">List of ICUs</a>)
+st.markdown(mk4,unsafe_allow_html=True)
 
 
 #TotalConfStart_text = st.sidebar.empty()
