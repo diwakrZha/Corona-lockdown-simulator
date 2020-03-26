@@ -37,7 +37,8 @@ df_corona=downloadData()
 
 df_corona= df_corona.groupby(['Country/Region', 'Date'],as_index=False).sum()
 df_corona=df_corona.drop(['Lat', 'Long'], axis=1)
-df_corona = pd.melt(df_corona, id_vars=['Country/Region', 'Date'], value_vars=['Confirmed','Recovered', 'Deaths'])
+
+df_corona = pd.melt(df_corona, id_vars=['Country/Region', 'Date'], value_vars=['Confirmed', 'Deaths'])
 
 # Automatically setting dates from loaded data
 start_date = df_corona.iloc[0:]['Date'].values[0]
@@ -85,8 +86,8 @@ def selectCountry(Country, df_corona):
 
 
 def retrieveParameters(df_corona_country,start_date3):
-    mask = (df_corona_country['Situation']=='Recovered') & (df_corona_country['Date']==start_date3)
-    Total_recovered = df_corona_country.loc[mask]['Count'].max()
+    #mask = (df_corona_country['Situation']=='Recovered') & (df_corona_country['Date']==start_date3)
+    Total_recovered = 1#df_corona_country.loc[mask]['Count'].max()
     
     
     mask = (df_corona_country['Situation']=='Deaths') & (df_corona_country['Date']==start_date3)
@@ -100,8 +101,8 @@ def retrieveParameters(df_corona_country,start_date3):
     if np.isnan(Total_confirmed_Lockdownt0):
         Total_confirmed_Lockdownt0 =1
     
-    rowForDispay=df_corona_country[(df_corona_country['Date']==start_date3) & (df_corona_country['Situation']=='Recovered')]
-    Total_recovered_Lockdownt0 = rowForDispay.Count.max()
+    #rowForDispay=df_corona_country[(df_corona_country['Date']==start_date3) & (df_corona_country['Situation']=='Recovered')]
+    Total_recovered_Lockdownt0 = 1#rowForDispay.Count.max()
 
     if np.isnan(Total_recovered_Lockdownt0):
         Total_recovered_Lockdownt0 =1
@@ -161,14 +162,13 @@ else:
     plotScale = 'log'
  
 selectedCountry= st.selectbox("Country: ",df_corona['Country/Region'].unique().tolist(),index=53)
-Contacts=st.slider('< Less - | Contacts [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
+Contacts=st.slider('< Less - |relative interaction| - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 st.write('To reduce the impact, hills should spread out & the green line should bend down')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
 
 expectedChartTitle_placeholder1 = st.empty()
 expectedChartTitle_placeholder2 = st.empty()
-
 
 if Contacts <=6:
     projVal =1600
