@@ -120,7 +120,7 @@ def SetParameters(Days, Confirmed_in_country, Critically_ill, E0, D0, Rec, start
     I0=E0-Rec-D0
 
     y0=S0, E0, I0, Rec
-    st.write(E0,I0, D0, Rec)
+    #st.write(E0,I0, D0, Rec)
     t = np.linspace(0,Days , Days+1)     # A grid of time points (in days)
     
     #pad confirmed data to match lengths for plotting
