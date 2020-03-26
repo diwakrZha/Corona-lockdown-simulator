@@ -10,6 +10,7 @@ Streamlit app which helps you calculate the effect of lockdown in the wake of Co
 7. Italy's original (before lockdown),the number for contacts was ~19 (compare how this compares with the number of "Contacts" after lockdown)
 8. Now move the "Contacts" slider on the main UI page to guess how long this may last and how many can get critically ill if not done so.
 9. Kepp safe everyone
+
 10.Data is from JHU
 
 1I was inspired from several existing projects and will reference them next week.
