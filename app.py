@@ -154,6 +154,9 @@ fitChart_placeholder = st.sidebar.empty()
 
 S=st.sidebar.slider('Bring Confirmed and Expected closer ↑↑', min_value=4.5, max_value=40.0, value=19.0, step=0.5, format=None)
 
+confirmedCase_placeholder = st.sidebar.empty()
+
+
 criticalOnly=st.checkbox('Only show estimate for critically ill')
 
 if st.checkbox('Linear scale ("curve flattening")'):
@@ -162,7 +165,7 @@ else:
     plotScale = 'log'
  
 selectedCountry= st.selectbox("Country: ",df_corona['Country/Region'].unique().tolist(),index=53)
-Contacts=st.slider('< Less - | Contacts [a.u] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
+Contacts=st.slider('< Less - |relative interaction| - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 st.write('To reduce the impact, hills should spread out & the green line should bend down')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
@@ -296,7 +299,6 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
 
     return OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3
 
-
 #call contactFunction
 OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3=getContactFunc(Contacts,selectedCountry, ICUbeds)
 #insert this for a horizontal line indicating ICUs in the country
@@ -318,9 +320,14 @@ rowForDispay3=OnlyConfirmed[OnlyConfirmed['Count']==OnlyConfirmed['Count'].max()
 confirmedPeakCount=np.str(np.int(rowForDispay3.Count.max()))
 confirmedPeakDate = np.str(rowForDispay3.Date.dt.date.max())
 
-mk1=(f'<div><span style="color:#26272F;font-weight: bold; font-size: 100%">Peaks on: {infectedPeakDate}</span></div> ' +f'<span style="color:#F99E4C;font-weight: bold; font-size: 100%">Infected: ~{infectedPeakCount}</span>'+f'<div><span style="color:#EF4648;font-weight: bold; font-size: 100%">Critical: ~{criticalPeakCount}</span></div>'+f'<span style="color:#3F6A8A;font-weight: bold; font-size: 100%">Confirmed: ~{confirmedPeakCount}</span>')
+mk1=(f'<div><span style="color:#26272F;font-weight: bold; font-size: 100%">Peaks on: {infectedPeakDate}</span></div> ' +f'<span style="color:#F99E4C;font-weight: bold; font-size: 100%">Infected: ~{infectedPeakCount}</span>'+f'<div><span style="color:#EF4648;font-weight: bold; font-size: 100%">Critical: ~{criticalPeakCount}</span></div>')
 
 expectedChartTitle_placeholder.markdown(mk1,unsafe_allow_html=True)
+
+
+mk4=(f'<span style="color:#3F6A8A;font-weight: bold; font-size: 100%">Confirmed today : ~{confirmedPeakCount}</span>')
+confirmedCase_placeholder.markdown(mk4,unsafe_allow_html=True)
+
 
 
 ExpCountryPlot= alt.Chart(OnlyExpected).transform_filter(alt.datum.Count>0.01).mark_area(clip=True,opacity=0.7).encode(
