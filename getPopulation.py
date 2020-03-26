@@ -16,6 +16,8 @@ countryPopulation['Korea, South'] = countryPopulation['South Korea']
 countryPopulation['Korea, North'] = countryPopulation['North Korea']
 countryPopulation['Taiwan*'] = 23574274
 countryPopulation['Serbia'] = 7057666
+countryPopulation['Eswatini'] = 1357161
+
 
 def get_population(country):
     return countryPopulation[country]
