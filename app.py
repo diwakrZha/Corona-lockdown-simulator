@@ -9,18 +9,12 @@ Created on Mon Mar 23 01:10:09 2020
 import pandas as pd
 import numpy as np
 import altair as alt
-import streamlit as st
-import webbrowser
-
-from functools import reduce
 from scipy.integrate import odeint
 from itertools import chain, repeat, islice
 import math
-
-
 import getPopulation
 
-
+import streamlit as st
 
 #Some book keeping, will be needed later
 def pad_infinite(iterable, padding=None):
@@ -36,54 +30,22 @@ st.title('Corona Lockdown')
 #Downloading data from JHU repository
 @st.cache
 def downloadData():
-    df_confirmed = pd.read_csv('https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
-    df_deaths = pd.read_csv('https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
-    df_recovered = pd.read_csv('https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
-    return df_confirmed, df_deaths, df_recovered
+    df_corona = pd.read_csv('https://raw.githubusercontent.com/datasets/covid-19/master/data/time-series-19-covid-combined.csv')
+    return df_corona
 
-df_confirmed, df_deaths, df_recovered=downloadData()
+df_corona=downloadData()
 
-
-# 1.2 Tidying the data
-id_list = df_confirmed.columns.to_list()[:4]
-vars_list = df_confirmed.columns.to_list()[4:]
-
-confirmed_tidy = pd.melt(df_confirmed, id_vars=id_list,     value_vars=vars_list, var_name='Date', value_name='Confirmed')
-deaths_tidy = pd.melt(df_deaths, id_vars=id_list,     value_vars=vars_list, var_name='Date', value_name='Deaths')
-recovered_tidy = pd.melt(df_recovered, id_vars=id_list,     value_vars=vars_list, var_name='Date', value_name='Recovered')
-
-
-# In[5]:
-
-
-# 1.3 Merging the three dataframes into one
-data_frames = [confirmed_tidy, deaths_tidy, recovered_tidy]          
-df_corona = reduce(lambda left, right: pd.merge(
-    left, right, on = id_list+['Date'], how='outer'), data_frames)
-
-
-# In[6]:
-
-
-# 1.4 Each row should only represent one observation
-id_vars = df_corona.columns[:5]
-data_type = ['Confirmed', 'Deaths', 'Recovered']
-df_corona = pd.melt(df_corona, id_vars=id_vars, value_vars=data_type, var_name='Situation', value_name='Count')
-df_corona['Date'] = pd.to_datetime(df_corona['Date'],format='%m/%d/%y', errors='raise').dt.date
-
-df_corona=df_corona.sort_values(by=['Country/Region', 'Date'], ascending=True)
-
-
-# In[7]:
-
+df_corona= df_corona.groupby(['Country/Region', 'Date'],as_index=False).sum()
+df_corona=df_corona.drop(['Lat', 'Long'], axis=1)
+df_corona = pd.melt(df_corona, id_vars=['Country/Region', 'Date'], value_vars=['Confirmed','Recovered', 'Deaths'])
 
 # Automatically setting dates from loaded data
 start_date = df_corona.iloc[0:]['Date'].values[0]
 end_date = df_corona.iloc[-1:]['Date'].values[0]
 
 #this is not really correct, because provinces can be separated. Will add that later
-df_corona= df_corona.groupby(['Country/Region','Situation', 'Date'],as_index=False).agg({'Count':'sum'})
-
+df_corona= df_corona.groupby(['Country/Region','variable', 'Date'],as_index=False).agg({'value':'sum'})
+df_corona = df_corona.rename({'value': 'Count', 'variable': 'Situation'}, axis=1)
 
 # In[8]:
 
@@ -113,9 +75,6 @@ sum_situations_cropped = sum_situations.loc[mask]
 
 #Parameters settings
 global rateICU  # Appx. percentage of patience that may need ICU
-#rateICU=float(0.02) 
-#prob_of_transmission=float(st.sidebar.number_input('Transmission', min_value=0.00, max_value=1.000, value=0.02, step=0.01,key=None))
-
 
 #Select country and crop data to confirmed cases
 @st.cache
@@ -126,9 +85,15 @@ def selectCountry(Country, df_corona):
 
 
 def retrieveParameters(df_corona_country,start_date3):
-    mask = df_corona_country['Situation']=='Recovered'
+    mask = (df_corona_country['Situation']=='Recovered') & (df_corona_country['Date']==start_date3)
     Total_recovered = df_corona_country.loc[mask]['Count'].max()
-
+    
+    
+    mask = (df_corona_country['Situation']=='Deaths') & (df_corona_country['Date']==start_date3)
+    Total_Dead = df_corona_country.loc[mask]['Count'].max()
+    if np.isnan(Total_Dead):
+        Total_Dead =0
+        
     #infected & recovered at time when lockdown starts
     rowForDispay=df_corona_country[(df_corona_country['Date']==start_date3) & (df_corona_country['Situation']=='Confirmed')]
     Total_confirmed_Lockdownt0 = rowForDispay.Count.max()
@@ -144,16 +109,18 @@ def retrieveParameters(df_corona_country,start_date3):
     mask=(df_corona_country['Situation'] == 'Confirmed')
     df_corona_countryConf = df_corona_country.loc[mask]
 
-    return df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, Total_confirmed_Lockdownt0
+    return df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, Total_Dead, Total_confirmed_Lockdownt0
 
-@st.cache
-def SetParameters(Days, Confirmed_in_country, Critically_ill, I0, Rec, start_date3, population):
-    d2r=14                  #amount of days to recover & build immunity
+#@st.cache
+def SetParameters(Days, Confirmed_in_country, Critically_ill, E0, D0, Rec, start_date3, population):
+    d2r=14              #amount of days to recover & build immunity
     sigma = 1.0 / 2         #How quickly someone becomes infective(basically within incubation period, say day 2)   
     gamma = 1./d2r                 #mean recovery rate, gamma, (in 1/days)
-    S0 = population - I0 - Rec     # Everyone else, S0, is susceptible to infection initially.
-    y0=S0, I0, Rec
+    S0 = population - E0 - Rec-D0     # Everyone else, S0, is susceptible to infection initially.
+    I0=E0-Rec-D0
 
+    y0=S0, E0, I0, Rec
+    st.write(E0,I0, D0, Rec)
     t = np.linspace(0,Days , Days+1)     # A grid of time points (in days)
     
     #pad confirmed data to match lengths for plotting
@@ -162,15 +129,15 @@ def SetParameters(Days, Confirmed_in_country, Critically_ill, I0, Rec, start_dat
         
     SimulationDatesRange=pd.date_range(start_date3, periods=len(t), freq='D')
     end_date2=SimulationDatesRange.max() # new date axis for projected simulation
-    return y0, t, sigma, gamma, population, Confirmed_in_country, Critically_ill, SimulationDatesRange, end_date2
+    return y0, t, sigma, gamma, population, Confirmed_in_country, D0, Critically_ill, SimulationDatesRange, end_date2
 
 
-from SIReqns import SIReqns    
+from SEIReqns import SEIReqns
 # Integrate the SIR equations over the time grid, t.
-def calcdiffeqn(y0,t, population, beta, gamma):
-    ret = odeint(SIReqns, y0, t, args=(population, beta, gamma))
-    S, I, R = ret.T
-    return S, I, R
+def calcdiffeqn(y0,t, population, SDMod, beta, gamma, sigma):
+    ret = odeint(SEIReqns, y0, t, args=(population, SDMod, beta, gamma, sigma))
+    S, E, I, R = ret.T
+    return S, E, I, R
 
 
 def tooltips():
@@ -186,16 +153,14 @@ fitChart_placeholder = st.sidebar.empty()
 
 S=st.sidebar.slider('Bring Confirmed and Expected closer ↑↑', min_value=4.5, max_value=40.0, value=19.0, step=0.5, format=None)
 
-#st.write('Our task: take the orange hill away from blue snake')
-
-criticalOnly=st.checkbox('Critical only')
+criticalOnly=st.checkbox('Only show estimate for critically ill')
 
 if st.checkbox('Linear scale ("curve flattening")'):
     plotScale = 'linear'
 else:
     plotScale = 'log'
  
-selectedCountry= st.selectbox("Country: ",df_corona['Country/Region'].unique().tolist(),index=54)
+selectedCountry= st.selectbox("Country: ",df_corona['Country/Region'].unique().tolist(),index=53)
 Contacts=st.slider('< Less - |relative interaction| - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 st.write('To reduce the impact, hills should spread out & the green line should bend down')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
@@ -204,19 +169,22 @@ st.write('To reduce the impact, hills should spread out & the green line should 
 expectedChartTitle_placeholder1 = st.empty()
 expectedChartTitle_placeholder2 = st.empty()
 
-if Contacts <=6:
+if Contacts <=0.15:
     projVal =1600
 else:
     projVal =600
     
 projectionDays=st.sidebar.number_input('Days to project in future', min_value=5, max_value=2000, value=projVal, step=10,key=None)
 ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=14.6,key=None)
-rateICU=float(st.sidebar.number_input('Critical prob.', min_value=0.00, max_value=1.000, value=0.01, step=0.01,key=None))
+rateICU=float(st.sidebar.number_input('Prob. critically ill', min_value=0.00, max_value=1.000, value=0.02, step=0.01,key=None))
 
 #st.sidebar.markdown("Select log to show critical cases")        
       
 mk3=('<a href="https://en.wikipedia.org/wiki/List_of_countries_by_hospital_beds" target="_blank">List of ICUs</a>')
 st.sidebar.markdown(mk3,unsafe_allow_html=True)
+
+def exponential(x, a, k, b):
+    return a*np.exp(x*k) + b
 
 
 def getContactFunc(Contacts, selectedCountry, ICUbeds):
@@ -225,29 +193,41 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
     
     #Specific country data
     df_corona_country=selectCountry(selectedCountry, df_corona)
-    
+    #st.write(df_corona_country)
     #assign new date to see the effect of lockdown
-    start_date3= LockDate_placeholder.selectbox("Choose the lockdown date",df_corona_country['Date'].unique().tolist(),index=0)   
+    start_date3= LockDate_placeholder.selectbox("Choose the lockdown date",df_corona_country['Date'].unique().tolist(),index=0)       
     
-    df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, Total_confirmed_Lockdownt0=\
+    df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, Total_dead, Total_confirmed_Lockdownt0=\
         retrieveParameters(df_corona_country,start_date3)
 
     mask = (df_corona_countryConf['Date']>= start_date3)
+    
     df_corona_countryConf = df_corona_countryConf.loc[mask]
 
     Confirmed_in_country = df_corona_countryConf['Count'].values.tolist()
     Critically_ill = [i * rateICU for i in Confirmed_in_country]
     
-    y0, t, sigma, gamma, population, Confirmed_in_country, Critically_ill, SimulationDatesRange, end_date2 = \
-        SetParameters(projectionDays,Confirmed_in_country, Critically_ill, Total_confirmed_Lockdownt0, Total_recovered_Lockdownt0, start_date3, population)    
-
+    y0, t, sigma, gamma, population, Confirmed_in_country, Total_dead, Critically_ill, SimulationDatesRange, end_date2 = \
+        SetParameters(projectionDays,Confirmed_in_country, Critically_ill, Total_confirmed_Lockdownt0, Total_dead,Total_recovered_Lockdownt0, start_date3, population)    
+        
     prob_of_transmission = 0.018 # from literature, leave it as it is.
+    #Say R0= 2.5 # as seen
+    #beta = 0.4 #Italy (0.37, more here 24 January–8 February [Median (95% CIs)], https://science.sciencemag.org/content/early/2020/03/24/science.abb3221/tab-figures-data)
+    SDMod = 1
+    #beta=Contacts*beta #Social Distancing modulator (normalizing to 100% being normal) 
     
     # Contact rate beta = Probability of transmission x Number of contacts
     beta = np.around((prob_of_transmission*Contacts), decimals=4) #beta = 0.36 # early italian estimate
     
-    S, I, R = np.around((calcdiffeqn(y0, t, population, beta, gamma)),decimals=2)
-    R0 = beta / gamma     #R0 Value
+    
+    # Contact rate beta = Probability of transmission x Number of contacts
+    #beta = np.around((beta*SDMod), decimals=4) #beta = 0.36 # early italian estimate
+    #beta = 0.36*Contacts
+    S, E, I, R = calcdiffeqn(y0,t, population, SDMod, beta, gamma, sigma)
+    #st.write(S,E, I, R)
+    R0 = (beta*SDMod) / gamma     #R0 Value
+    #st.write(beta*SDMod)
+    #st.write(R0)
     
     totalICUbeds=((ICUbeds/100000)*population)/2    # 50% occupancy, change this if you have total nrs.
     
@@ -294,9 +274,25 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
     OnlyConfirmed= tidy_df_model.loc[mask]
     
     ##Model vs confirmed cases until now
-    mask = (tidy_df_model['Date'].dt.date>= start_date3) & (tidy_df_model['Date'].dt.date<= end_date) 
+    mask = (tidy_df_model['Date'] >= start_date3) & (tidy_df_model['Date'] <= end_date) 
     df_corona_country_cropped = tidy_df_model.loc[mask]
-    
+#    
+#    OnlyExpectedSeries = OnlyExpected['Count'] # convert to pd.Series
+#    OnlyConfirmedSeries = OnlyConfirmed['Count'] # convert to pd.Series
+#    # start with first infections
+#
+#    OnlyExpectedSeries = OnlyExpectedSeries[OnlyExpectedSeries.values != 0]
+#    OnlyConfirmedSeries = OnlyConfirmedSeries[OnlyConfirmedSeries.values != 0]
+#    OnlyConfirmedSeries = OnlyConfirmedSeries[OnlyConfirmedSeries.values != '']
+#    
+#    
+#    poptimal_exponentialE, pcovariance_exponentialE = curve_fit(exponential, np.arange(len(OnlyExpectedSeries.values)), OnlyExpectedSeries, p0=[0.3, 0.205, 0])
+#    poptimal_exponentialC, pcovariance_exponentialC = curve_fit(exponential, np.arange(len(OnlyConfirmedSeries.values)), OnlyConfirmedSeries, p0=[0.3, 0.205, 0])
+#    
+#    st.write(poptimal_exponentialE)
+#    st.write(poptimal_exponentialC)
+
+
     return OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3
 
 
@@ -304,7 +300,7 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
 OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3=getContactFunc(Contacts,selectedCountry, ICUbeds)
 #insert this for a horizontal line indicating ICUs in the country
 scaleFactorC = 0.013
-scaleFactor = 0.7
+scaleFactor = 0.75
 
 rowForDispay=OnlyExpected[OnlyExpected['Count']==OnlyExpected['Count'].max()]
 infectedPeakCount=np.str(np.int(rowForDispay.Count.max()))
@@ -441,11 +437,13 @@ N_tD = sum_situations[(sum_situations.Date==end_date)&(sum_situations.Situation 
 #print('Total confirmed cases on',end_date, '=', N_tD)
 
 #Number of days since t=0 (this is considering cropped time)
+
+end_date=pd.to_datetime(end_date).date()
+start_date=pd.to_datetime(start_date).date()
+
 D = (end_date-start_date).days
 #print('Days since t0 =', D)
 
 #IR = infection rate
 IR = np.exp(np.log(N_tD/N_t0)/D)
 #print('Infection rate =', IR)
-
-
