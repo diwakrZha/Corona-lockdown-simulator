@@ -150,9 +150,11 @@ alt.themes.enable('tooltips')
 expectedChartTitle_placeholder = st.empty()
 expectedChart_placeholder = st.empty()
 LockDate_placeholder = st.sidebar.empty()
+
+st.sidebar.markdown('**Calibration plot**')
 fitChart_placeholder = st.sidebar.empty()
 
-S=st.sidebar.slider('Bring Confirmed and Expected closer ↑↑', min_value=4.5, max_value=40.0, value=19.0, step=0.5, format=None)
+S=st.sidebar.slider('Calibration: bring \"Confirmed\" & \"Expected\" closer', min_value=4.5, max_value=40.0, value=19.0, step=0.5, format=None)
 
 confirmedCase_placeholder = st.sidebar.empty()
 
@@ -161,11 +163,14 @@ criticalOnly=st.checkbox('Only show estimate for critically ill')
 
 if st.checkbox('Linear scale ("curve flattening")'):
     plotScale = 'linear'
+    yAxisName= ('COUNT (linear scale)')
 else:
     plotScale = 'log'
+    yAxisName= ('COUNT (log. scale)')
+
  
 selectedCountry= st.selectbox("Country: ",df_corona['Country/Region'].unique().tolist(),index=53)
-Contacts=st.slider('< Less - | Contacts [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
+Contacts=st.slider('< Less - | Interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 st.write('To reduce the impact, hills should spread out & the green line should bend down')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
@@ -174,7 +179,7 @@ expectedChartTitle_placeholder1 = st.empty()
 expectedChartTitle_placeholder2 = st.empty()
 
 if Contacts <=6:
-    projVal =1600
+    projVal =1800
 else:
     projVal =600
     
@@ -331,22 +336,22 @@ confirmedCase_placeholder.markdown(mk4,unsafe_allow_html=True)
 
 
 ExpCountryPlot= alt.Chart(OnlyExpected).transform_filter(alt.datum.Count>0.01).mark_area(clip=True,opacity=0.7).encode(
-                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'Date',format = ("%b %Y"))),
-                                                                  y = alt.Y('Count:Q',scale=alt.Scale(type=plotScale,domain=(1,scaleFactor*population)), axis = alt.Axis(title = 'Count',format = ("~s"))),
+                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'DATE',format = ("%b %Y"))),
+                                                                  y = alt.Y('Count:Q',scale=alt.Scale(type=plotScale,domain=(1,scaleFactor*population)), axis = alt.Axis(title = yAxisName,format = ("~s"))),
                                                                   color =alt.value("#F99E4C"),
                                                                   tooltip=(['Date', 'Count'])
                                                                 ).interactive()
 
 CriticalCountryPlot0= alt.Chart(OnlyCritical).transform_filter(alt.datum.Count>0.01).mark_area(clip=True,opacity=0.7).encode(
-                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'Date',format = ("%b %Y"))),
-                                                                  y = alt.Y('Count:Q',scale=alt.Scale(type=plotScale,domain=(1,scaleFactorC*population)), axis = alt.Axis(title = 'Count',format = ("~s"))),
+                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'DATE',format = ("%b %Y"))),
+                                                                  y = alt.Y('Count:Q',scale=alt.Scale(type=plotScale,domain=(1,scaleFactorC*population)), axis = alt.Axis(title = yAxisName,format = ("~s"))),
                                                                   color =alt.value("#EF4648"),
                                                                   tooltip=['Date', 'Count']
                                                                 ).interactive()
 
 ConfirmedCountryPlot= alt.Chart(OnlyConfirmed).transform_filter(alt.datum.Count>0.01).mark_line(size=6,clip=True, opacity=0.9).encode(
-                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'Date',format = ("%b %Y"))),
-                                                                  y = alt.Y('Count:Q',scale=alt.Scale(type=plotScale,domain=(1,scaleFactorC*population)), axis = alt.Axis(title = 'Count',format = ("~s"))),
+                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'DATE',format = ("%b %Y"))),
+                                                                  y = alt.Y('Count:Q',scale=alt.Scale(type=plotScale,domain=(1,scaleFactorC*population)), axis = alt.Axis(title = yAxisName,format = ("~s"))),
                                                                   color =alt.value("#06A108"),
                                                                   tooltip=['Date', 'Count']
                                                                 ).interactive()
@@ -384,7 +389,7 @@ expectedChartTitle_placeholder2.text('⇣')
 countryPlot= alt.Chart(df_corona_country_cropped).mark_point(clip=True, filled=True,size=100, opacity=0.9).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date',format = ("%b %Y"))),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
-                                                                  color = alt.Color('Situation:N', legend = alt.Legend(title = '', orient ='top',labelFontSize=12)),
+                                                                  color = alt.Color('Situation:N', legend = alt.Legend(title = '',orient ='bottom',labelFontSize=12)),
                                                                   tooltip=['Date', 'Count']
                                                                  ).interactive().configure(background='transparent')
 
@@ -455,3 +460,5 @@ D = (end_date-start_date).days
 #IR = infection rate
 IR = np.exp(np.log(N_tD/N_t0)/D)
 #print('Infection rate =', IR)
+
+
