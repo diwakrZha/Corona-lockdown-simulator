@@ -436,7 +436,7 @@ d= alt.Chart(sum_situations_cropped).mark_area().encode(
 st.altair_chart(d,use_container_width=True)
 
 
-st.markdown('I am not an epidemiologist but a physicist with mathematical modelling/data expertise. If you have suggestions on improvement please')
+st.markdown('I am not an epidemiologist but a physicist with mathematical modelling and data expertise. If you have suggestions on improvement please')
 mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">Get in touch</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
