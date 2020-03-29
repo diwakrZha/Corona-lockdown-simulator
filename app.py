@@ -173,7 +173,7 @@ else:
 
  
 ListCountries = df_corona['Country/Region'].unique().tolist()
-defCountry= ListCountries.index('Estonia')
+defCountry= ListCountries.index('US')
 selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
 Contacts=st.slider('< Less - | Interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 st.write('To reduce deaths, hills should spread out & the blue line should bend down')
@@ -446,7 +446,7 @@ d= alt.Chart(sum_situations_cropped).mark_area().encode(
 st.altair_chart(d,use_container_width=True)
 
 
-st.markdown('I am not an epidemiologist but a physicist with mathematical modelling/data expertise. If you have suggestions on improvement please')
+st.markdown('I am not an epidemiologist but a physicist with mathematical modelling with data expertise. I you have corrections and/or want improvements please')
 mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">Get in touch</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
