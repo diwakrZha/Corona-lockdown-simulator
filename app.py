@@ -91,9 +91,14 @@ def retrieveParameters(df_corona_country,start_date3):
     
     
     mask = (df_corona_country['Situation']=='Deaths') & (df_corona_country['Date']==start_date3)
-    Total_Dead = df_corona_country.loc[mask]['Count'].max()
-    if np.isnan(Total_Dead):
-        Total_Dead =0
+    D0 = df_corona_country.loc[mask]['Count'].max()
+    if np.isnan(D0):
+        D0 =0
+    
+    mask = (df_corona_country['Situation']=='Deaths')
+    Total_dead = df_corona_country.loc[mask]['Count'].max()
+    if np.isnan(Total_dead):
+        Total_dead =0
         
     #infected & recovered at time when lockdown starts
     rowForDispay=df_corona_country[(df_corona_country['Date']==start_date3) & (df_corona_country['Situation']=='Confirmed')]
@@ -110,7 +115,7 @@ def retrieveParameters(df_corona_country,start_date3):
     mask=(df_corona_country['Situation'] == 'Confirmed')
     df_corona_countryConf = df_corona_country.loc[mask]
 
-    return df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, Total_Dead, Total_confirmed_Lockdownt0
+    return df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, D0, Total_confirmed_Lockdownt0, Total_dead
 
 #@st.cache
 def SetParameters(Days, Confirmed_in_country, Critically_ill, E0, D0, Rec, start_date3, population):
@@ -151,15 +156,14 @@ expectedChartTitle_placeholder = st.empty()
 expectedChart_placeholder = st.empty()
 LockDate_placeholder = st.sidebar.empty()
 
-st.sidebar.markdown('**Calibration plot**')
+st.sidebar.markdown('**Calibrate model to real data**')
 fitChart_placeholder = st.sidebar.empty()
 
 S=st.sidebar.slider('Calibration: bring \"Confirmed\" & \"Expected\" closer', min_value=4.5, max_value=40.0, value=19.0, step=0.5, format=None)
+confirmedCase_placeholder = st.empty()
 
-confirmedCase_placeholder = st.sidebar.empty()
 
-
-criticalOnly=st.checkbox('Only show estimate for critically ill')
+criticalOnly=st.checkbox('Only Show estimate for critically ill')
 
 if st.checkbox('Linear scale ("curve flattening")'):
     plotScale = 'linear'
@@ -169,9 +173,11 @@ else:
     yAxisName= ('COUNT (log. scale)')
 
  
-selectedCountry= st.selectbox("Country: ",df_corona['Country/Region'].unique().tolist(),index=54)
+ListCountries = df_corona['Country/Region'].unique().tolist()
+defCountry= ListCountries.index('Estonia')
+selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
 Contacts=st.slider('< Less - | Interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
-st.write('To reduce the impact, hills should spread out & the green line should bend down')
+st.write('To reduce deaths, hills should spread out & the blue line should bend down')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
 
@@ -206,7 +212,7 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
     #assign new date to see the effect of lockdown
     start_date3= LockDate_placeholder.selectbox("Choose the lockdown date",df_corona_country['Date'].unique().tolist(),index=0)       
     
-    df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, Total_dead, Total_confirmed_Lockdownt0=\
+    df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, D0, Total_confirmed_Lockdownt0, Total_dead=\
         retrieveParameters(df_corona_country,start_date3)
 
     mask = (df_corona_countryConf['Date']>= start_date3)
@@ -216,8 +222,8 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
     Confirmed_in_country = df_corona_countryConf['Count'].values.tolist()
     Critically_ill = [i * rateICU for i in Confirmed_in_country]
     
-    y0, t, sigma, gamma, population, Confirmed_in_country, Total_dead, Critically_ill, SimulationDatesRange, end_date2 = \
-        SetParameters(projectionDays,Confirmed_in_country, Critically_ill, Total_confirmed_Lockdownt0, Total_dead,Total_recovered_Lockdownt0, start_date3, population)    
+    y0, t, sigma, gamma, population, Confirmed_in_country, D0, Critically_ill, SimulationDatesRange, end_date2 = \
+        SetParameters(projectionDays,Confirmed_in_country, Critically_ill, Total_confirmed_Lockdownt0, D0,Total_recovered_Lockdownt0, start_date3, population)    
         
     prob_of_transmission = 0.018 # from literature, leave it as it is.
     #Say R0= 2.5 # as seen
@@ -302,10 +308,10 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
 #    st.write(poptimal_exponentialC)
 
 
-    return OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3
+    return OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, Total_dead
 
 #call contactFunction
-OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3=getContactFunc(Contacts,selectedCountry, ICUbeds)
+OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, Total_dead=getContactFunc(Contacts,selectedCountry, ICUbeds)
 #insert this for a horizontal line indicating ICUs in the country
 scaleFactorC = 0.013
 scaleFactor = 0.75
@@ -325,13 +331,13 @@ rowForDispay3=OnlyConfirmed[OnlyConfirmed['Count']==OnlyConfirmed['Count'].max()
 confirmedPeakCount=np.str(np.int(rowForDispay3.Count.max()))
 confirmedPeakDate = np.str(rowForDispay3.Date.dt.date.max())
 
-mk1=(f'<div><span style="color:#26272F;font-weight: bold; font-size: 100%">Peaks on: {infectedPeakDate}</span></div> ' +f'<span style="color:#F99E4C;font-weight: bold; font-size: 100%">Infected: ~{infectedPeakCount}</span>'+f'<div><span style="color:#EF4648;font-weight: bold; font-size: 100%">Critical: ~{criticalPeakCount}</span></div>')
+mk1=(f'<span style="color:#F99E4C;font-weight: bold; font-size: 100%">Infected: ~{infectedPeakCount}</span>'+f'<div><span style="color:#EF4648;font-weight: bold; font-size: 100%">Critical: ~{criticalPeakCount}</span></div>'+f'<div><span style="color:#26272F;font-weight: bold; font-size: 100%">Peaks on: {infectedPeakDate}</span></div> ')
 
 expectedChartTitle_placeholder.markdown(mk1,unsafe_allow_html=True)
 
 
-mk4=(f'<span style="color:#3F6A8A;font-weight: bold; font-size: 100%">Confirmed today : ~{confirmedPeakCount}</span>')
-confirmedCase_placeholder.markdown(mk4,unsafe_allow_html=True)
+mk5=(f'<span style="color:#5677A4;font-weight: bold; font-size: 100%">Confirmed: {confirmedPeakCount}</span>'+' | 'f'<span style="color:red;font-weight: bold; font-size: 100%">Deaths: {Total_dead}</span>')
+confirmedCase_placeholder.markdown(mk5,unsafe_allow_html=True)
 
 
 
@@ -352,12 +358,12 @@ CriticalCountryPlot0= alt.Chart(OnlyCritical).transform_filter(alt.datum.Count>0
 ConfirmedCountryPlot= alt.Chart(OnlyConfirmed).transform_filter(alt.datum.Count>0.01).mark_line(size=6,clip=True, opacity=0.9).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'DATE',format = ("%b %Y"))),
                                                                   y = alt.Y('Count:Q',scale=alt.Scale(type=plotScale,domain=(1,scaleFactorC*population)), axis = alt.Axis(title = yAxisName,format = ("~s"))),
-                                                                  color =alt.value("#06A108"),
+                                                                  color =alt.value("#5677A4"),
                                                                   tooltip=['Date', 'Count']
                                                                 ).interactive()
 
 
-ICULine = alt.Chart(OnlyCritical).mark_rule(color="#26272F", opacity=0.3, size=5,strokeDash=[1, 1]).encode(
+ICULine = alt.Chart(OnlyCritical).mark_rule(color="green", opacity=0.3, size=5,strokeDash=[1, 1]).encode(
     #x='Date:T',
     y="ICUs:Q",
     size=alt.value(3)
@@ -368,7 +374,7 @@ annotationICU = alt.Chart(OnlyCritical).mark_text(
     baseline='bottom',
     fontSize = 14,
     dx = 0,
-    color='#26272F'
+    color='green'
 ).encode(
     y='ICUs',
     text='ICUsText')  
@@ -386,15 +392,13 @@ else:
 expectedChartTitle_placeholder1.text('⇣')
 expectedChartTitle_placeholder2.text('⇣')
 
-countryPlot= alt.Chart(df_corona_country_cropped).mark_point(clip=True, filled=True,size=100, opacity=0.9).encode(
+countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=True, size =5, opacity=0.9).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date',format = ("%b %Y"))),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
                                                                   color = alt.Color('Situation:N', legend = alt.Legend(title = '',orient ='bottom',labelFontSize=12)),
                                                                   tooltip=['Date', 'Count']
                                                                  ).interactive().configure(background='transparent')
 
-
-#st.sidebar.altair_chart((countryPlot), use_container_width=True)
 
 fitChart_placeholder.altair_chart(countryPlot,use_container_width=True)
 
@@ -432,7 +436,7 @@ d= alt.Chart(sum_situations_cropped).mark_area().encode(
 st.altair_chart(d,use_container_width=True)
 
 
-
+st.markdown('I am not an epidemiologist but a physicist with mathematical modelling/data expertise. If you have suggestions on improvement please')
 mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">Get in touch</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
