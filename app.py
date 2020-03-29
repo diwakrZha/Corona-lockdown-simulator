@@ -189,7 +189,7 @@ else:
     projVal =600
     
 projectionDays=projVal#st.sidebar.number_input('Days to project in future', min_value=5, max_value=2000, value=projVal, step=10,key=None)
-ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=14.6,key=None)
+ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=34.7,key=None)
 rateICU=float(st.sidebar.number_input('Critical illness rate [%]', min_value=0.05, max_value=100.0, value=1.0, step=0.05,key=None))
 rateICU=rateICU/100
 #st.sidebar.markdown("Select log to show critical cases")        
