@@ -13,6 +13,7 @@ from scipy.integrate import odeint
 from itertools import chain, repeat, islice
 import math
 import getPopulation
+from datetime import datetime, timedelta
 
 import streamlit as st
 
@@ -96,9 +97,7 @@ def retrieveParameters(df_corona_country,start_date3):
         D0 =0
     
     mask = (df_corona_country['Situation']=='Deaths')
-    Total_dead = df_corona_country.loc[mask]['Count'].max()
-    if np.isnan(Total_dead):
-        Total_dead =0
+    OnlyDeaths = df_corona_country.loc[mask]['Count']
         
     #infected & recovered at time when lockdown starts
     rowForDispay=df_corona_country[(df_corona_country['Date']==start_date3) & (df_corona_country['Situation']=='Confirmed')]
@@ -115,7 +114,7 @@ def retrieveParameters(df_corona_country,start_date3):
     mask=(df_corona_country['Situation'] == 'Confirmed')
     df_corona_countryConf = df_corona_country.loc[mask]
 
-    return df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, D0, Total_confirmed_Lockdownt0, Total_dead
+    return df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, D0, Total_confirmed_Lockdownt0, OnlyDeaths
 
 #@st.cache
 def SetParameters(Days, Confirmed_in_country, Critically_ill, E0, D0, Rec, start_date3, population):
@@ -174,7 +173,7 @@ else:
 
  
 ListCountries = df_corona['Country/Region'].unique().tolist()
-defCountry= ListCountries.index('US')
+defCountry= ListCountries.index('Estonia')
 selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
 Contacts=st.slider('< Less - | Interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 st.write('To reduce deaths, hills should spread out & the blue line should bend down')
@@ -190,9 +189,9 @@ else:
     projVal =600
     
 projectionDays=projVal#st.sidebar.number_input('Days to project in future', min_value=5, max_value=2000, value=projVal, step=10,key=None)
-ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=34.7,key=None)
-rateICU=float(st.sidebar.number_input('Prob. critically ill', min_value=0.00, max_value=1.000, value=0.02, step=0.01,key=None))
-
+ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=14.6,key=None)
+rateICU=float(st.sidebar.number_input('Critical illness[%] (WHO est.: ~6%)', min_value=0.05, max_value=100.0, value=1.0, step=0.05,key=None))
+rateICU=rateICU/100
 #st.sidebar.markdown("Select log to show critical cases")        
       
 mk3=('<a href="https://en.wikipedia.org/wiki/List_of_countries_by_hospital_beds" target="_blank">List of ICUs</a>')
@@ -212,7 +211,7 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
     #assign new date to see the effect of lockdown
     start_date3= LockDate_placeholder.selectbox("Choose the lockdown date",df_corona_country['Date'].unique().tolist(),index=0)       
     
-    df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, D0, Total_confirmed_Lockdownt0, Total_dead=\
+    df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, D0, Total_confirmed_Lockdownt0, OnlyDeaths=\
         retrieveParameters(df_corona_country,start_date3)
 
     mask = (df_corona_countryConf['Date']>= start_date3)
@@ -308,10 +307,10 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
 #    st.write(poptimal_exponentialC)
 
 
-    return OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, Total_dead
+    return OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, OnlyDeaths
 
 #call contactFunction
-OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, Total_dead=getContactFunc(Contacts,selectedCountry, ICUbeds)
+OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, OnlyDeaths=getContactFunc(Contacts,selectedCountry, ICUbeds)
 #insert this for a horizontal line indicating ICUs in the country
 scaleFactorC = 0.013
 scaleFactor = 0.75
@@ -334,6 +333,17 @@ confirmedPeakDate = np.str(rowForDispay3.Date.dt.date.max())
 mk1=(f'<span style="color:#F99E4C;font-weight: bold; font-size: 100%">Infected: ~{infectedPeakCount}</span>'+f'<div><span style="color:#EF4648;font-weight: bold; font-size: 100%">Critical: ~{criticalPeakCount}</span></div>'+f'<div><span style="color:#26272F;font-weight: bold; font-size: 100%">Peaks on: {infectedPeakDate}</span></div> ')
 
 expectedChartTitle_placeholder.markdown(mk1,unsafe_allow_html=True)
+
+
+Total_dead = OnlyDeaths.max()
+if np.isnan(Total_dead):
+    Total_dead =0 # until now
+
+try:
+    two_weeks_ago = pd.to_datetime(end_date) - timedelta(weeks = 2) #correct formula for CFR
+    CFR=(np.around(Total_dead/(OnlyConfirmed.loc[OnlyConfirmed["Date"] == two_weeks_ago, "Count"]).iloc[0],decimals=2))*100
+except:
+    CFR ='NA'
 
 
 mk5=(f'<span style="color:#5677A4;font-weight: bold; font-size: 100%">Confirmed: {confirmedPeakCount}</span>'+' | 'f'<span style="color:red;font-weight: bold; font-size: 100%">Deaths: {Total_dead}</span>')
@@ -388,8 +398,9 @@ else:
         expectedChart_placeholder.altair_chart((ExpCountryPlot+CriticalCountryPlot0+ICULine+annotationICU),use_container_width=True)
 
 
+mk6=(f'<span style="color:red;font-weight: bold; font-size: 100%">Current crude fatality rate (T-14): {CFR}</span>')
 
-expectedChartTitle_placeholder1.text('⇣')
+expectedChartTitle_placeholder1.markdown(mk6,unsafe_allow_html=True)
 expectedChartTitle_placeholder2.text('⇣')
 
 countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=True, size =5, opacity=0.9).encode(
@@ -401,7 +412,6 @@ countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=Tru
 
 
 fitChart_placeholder.altair_chart(countryPlot,use_container_width=True)
-
 
 # ICULine = alt.Chart(df_corona_country_cropped).mark_rule(color="red", strokeDash=[2, 1]).encode(
 #     y="ICUs:Q",
@@ -436,7 +446,7 @@ d= alt.Chart(sum_situations_cropped).mark_area().encode(
 st.altair_chart(d,use_container_width=True)
 
 
-st.markdown('I am not an epidemiologist but a physicist with mathematical modelling and data expertise. If you have suggestions on improvement please')
+st.markdown('I am not an epidemiologist but a physicist with mathematical modelling/data expertise. If you have suggestions on improvement please')
 mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">Get in touch</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
@@ -464,5 +474,3 @@ D = (end_date-start_date).days
 #IR = infection rate
 IR = np.exp(np.log(N_tD/N_t0)/D)
 #print('Infection rate =', IR)
-
-
