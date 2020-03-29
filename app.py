@@ -174,7 +174,7 @@ else:
 
  
 ListCountries = df_corona['Country/Region'].unique().tolist()
-defCountry= ListCountries.index('Estonia')
+defCountry= ListCountries.index('US')
 selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
 Contacts=st.slider('< Less - | Interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 st.write('To reduce deaths, hills should spread out & the blue line should bend down')
