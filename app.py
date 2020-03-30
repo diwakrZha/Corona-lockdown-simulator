@@ -155,27 +155,28 @@ expectedChartTitle_placeholder = st.empty()
 expectedChart_placeholder = st.empty()
 LockDate_placeholder = st.sidebar.empty()
 
-st.sidebar.markdown('**Calibrate model to real data**')
+st.sidebar.markdown('**Calibrate model to confirmed data**')
 fitChart_placeholder = st.sidebar.empty()
 
-S=st.sidebar.slider('Calibration: bring \"Confirmed\" & \"Expected\" closer', min_value=4.5, max_value=40.0, value=20.0, step=0.5, format=None)
+ListCountries = df_corona['Country/Region'].unique().tolist()
+defCountry= ListCountries.index('Germany')
+selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
+
+S=st.sidebar.slider('Calibration: bring \"Confirmed\" & \"Expected\" closer', min_value=4.5, max_value=40.0, value=19.0, step=0.5, format=None)
 confirmedCase_placeholder = st.empty()
 
+Contacts=st.slider('< Less - | Social interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 
 criticalOnly=st.checkbox('Only Show estimate for critically ill')
 
-if st.checkbox('Linear scale ("curve flattening")'):
+if st.checkbox('Linear scale ("flattening the curve")'):
     plotScale = 'linear'
     yAxisName= ('COUNT (linear scale)')
 else:
     plotScale = 'log'
     yAxisName= ('COUNT (log. scale)')
 
- 
-ListCountries = df_corona['Country/Region'].unique().tolist()
-defCountry= ListCountries.index('Germany')
-selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
-Contacts=st.slider('< Less - | Interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
+
 st.write('To reduce deaths, hills should spread out & the blue line should bend down')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
@@ -189,7 +190,7 @@ else:
     projVal =600
     
 projectionDays=projVal#st.sidebar.number_input('Days to project in future', min_value=5, max_value=2000, value=projVal, step=10,key=None)
-ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=34.7,key=None)
+ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=29.2,key=None)
 rateICU=float(st.sidebar.number_input('Critical illness rate [%]', min_value=0.05, max_value=100.0, value=1.0, step=0.05,key=None))
 rateICU=rateICU/100
 #st.sidebar.markdown("Select log to show critical cases")        
@@ -316,8 +317,8 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
 #call contactFunction
 OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, OnlyDeaths=getContactFunc(Contacts,selectedCountry, ICUbeds)
 #insert this for a horizontal line indicating ICUs in the country
-scaleFactorC = 0.013
-scaleFactor = 0.75
+scaleFactorC = 0.006
+scaleFactor = 0.555
 
 rowForDispay=OnlyExpected[OnlyExpected['Count']==OnlyExpected['Count'].max()]
 infectedPeakCount=np.str(np.int(rowForDispay.Count.max()))
