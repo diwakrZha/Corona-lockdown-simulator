@@ -158,7 +158,7 @@ LockDate_placeholder = st.sidebar.empty()
 st.sidebar.markdown('**Calibrate model to real data**')
 fitChart_placeholder = st.sidebar.empty()
 
-S=st.sidebar.slider('Calibration: bring \"Confirmed\" & \"Expected\" closer', min_value=4.5, max_value=40.0, value=19.0, step=0.5, format=None)
+S=st.sidebar.slider('Calibration: bring \"Confirmed\" & \"Expected\" closer', min_value=4.5, max_value=40.0, value=20.0, step=0.5, format=None)
 confirmedCase_placeholder = st.empty()
 
 
