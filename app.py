@@ -13,7 +13,7 @@ from scipy.integrate import odeint
 from itertools import chain, repeat, islice
 import math
 import getPopulation
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import streamlit as st
 
@@ -173,7 +173,7 @@ else:
 
  
 ListCountries = df_corona['Country/Region'].unique().tolist()
-defCountry= ListCountries.index('US')
+defCountry= ListCountries.index('Germany')
 selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
 Contacts=st.slider('< Less - | Interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
 st.write('To reduce deaths, hills should spread out & the blue line should bend down')
@@ -196,6 +196,10 @@ rateICU=rateICU/100
       
 mk3=('<a href="https://en.wikipedia.org/wiki/List_of_countries_by_hospital_beds" target="_blank">List of ICUs</a>')
 st.sidebar.markdown(mk3,unsafe_allow_html=True)
+
+description=('<a href="https://medium.com/@diwaker.jha/how-long-will-the-corona-lockdown-last-8f23ef1730aa" target="_blank">Usage tutorial</a>')
+st.sidebar.markdown(description,unsafe_allow_html=True)
+
 
 def exponential(x, a, k, b):
     return a*np.exp(x*k) + b
@@ -446,7 +450,7 @@ d= alt.Chart(sum_situations_cropped).mark_area().encode(
 st.altair_chart(d,use_container_width=True)
 
 
-st.markdown('I am not an epidemiologist but a physicist with mathematical modelling with data expertise. I you have corrections and/or want improvements please')
+st.markdown('I am not an epidemiologist but a physicist with mathematical modelling and data expertise. I you have corrections and/or want improvements please')
 mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">Get in touch</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
