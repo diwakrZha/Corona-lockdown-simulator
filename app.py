@@ -177,7 +177,7 @@ else:
     yAxisName= ('COUNT (log. scale)')
 
 
-st.write('To reduce deaths, hills should spread out & the blue line should bend down')
+st.write('The blue line should bend down if social distancing is working')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
 
