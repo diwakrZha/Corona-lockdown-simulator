@@ -346,10 +346,10 @@ if np.isnan(Total_dead):
 
 try:
     two_weeks_ago = pd.to_datetime(end_date) - timedelta(weeks = 2) #correct formula for CFR
-    CFR=(np.around(Total_dead/(OnlyConfirmed.loc[OnlyConfirmed["Date"] == two_weeks_ago, "Count"]).iloc[0],decimals=2))*100
+    CFR=(Total_dead/(OnlyConfirmed.loc[OnlyConfirmed["Date"] == two_weeks_ago, "Count"]).iloc[0])*100
+    CFR = np.around(CFR,decimals=2)
 except:
     CFR ='NA'
-
 
 mk5=(f'<span style="color:#5677A4;font-weight: bold; font-size: 100%">Confirmed: {confirmedPeakCount}</span>'+' | 'f'<span style="color:red;font-weight: bold; font-size: 100%">Deaths: {Total_dead}</span>')
 confirmedCase_placeholder.markdown(mk5,unsafe_allow_html=True)
@@ -405,7 +405,7 @@ else:
 
 mk6=(f'<span style="color:red;font-weight: bold; font-size: 100%">Current crude fatality rate (T-14): {CFR}</span>')
 
-expectedChartTitle_placeholder1.markdown(mk6,unsafe_allow_html=True)
+#expectedChartTitle_placeholder1.markdown(mk6,unsafe_allow_html=True)
 expectedChartTitle_placeholder2.text('⇣')
 
 countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=True, size =5, opacity=0.9).encode(
