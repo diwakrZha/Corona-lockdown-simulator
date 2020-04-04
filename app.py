@@ -466,7 +466,7 @@ d1= alt.Chart(df_corona_countryChange[df_corona_countryChange['Situation']=='Con
 d3=(d0+d1).resolve_scale(y='independent').properties(width=300,height=400).interactive()
 st.altair_chart(d3,use_container_width=True)
 
-
+st.markdown('**Growth rate in last 20 days:**')
 
 d0= alt.Chart(df_corona_country_croppedChange).mark_area(opacity =0.5).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
