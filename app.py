@@ -407,7 +407,7 @@ mk6=(f'<span style="color:red;font-weight: bold; font-size: 100%">Current crude 
 #expectedChartTitle_placeholder1.markdown(mk6,unsafe_allow_html=True)
 expectedChartTitle_placeholder2.text('⇣') #F99E4C
 
-countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=True, size =5, opacity=0.9).encode(
+countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=True, size =5, opacity=0.6).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date',format = ("%b %Y"))),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
                                                                   color = alt.Color('Situation:N', 
@@ -446,7 +446,7 @@ st.markdown('**Country specific growth:**')
 st.markdown(selectedCountry)
 
 
-d0= alt.Chart(df_corona_countryChange).mark_area().encode(
+d0= alt.Chart(df_corona_countryChange).mark_area(opacity =0.5).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
                                                                   color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
@@ -468,7 +468,7 @@ st.altair_chart(d3,use_container_width=True)
 
 
 
-d0= alt.Chart(df_corona_country_croppedChange).mark_area().encode(
+d0= alt.Chart(df_corona_country_croppedChange).mark_area(opacity =0.5).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
                                                                   color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
@@ -501,7 +501,7 @@ st.markdown('______________________________')
 #st.altair_chart(points, use_container_width=True)
 st.markdown('**Global growth:**')
 
-globalPlot= alt.Chart(sum_situations).mark_area().encode(
+globalPlot= alt.Chart(sum_situations).mark_area(opacity =0.5).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
                                                                   color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
@@ -517,7 +517,7 @@ st.altair_chart(globalPlot,use_container_width=True)
 st.markdown('**Growth rate:**')
 st.write('Wuhan, China went into a complete lockdown on 23rd of january, the infection growth rate fell to minimum on ~26th February. It increased again because other parts of the world were still open. In mid of March, most countries outside of China implemented a lockdown as well and now after two weeks we see a slow down again. The lockdown seems to be working!')
 
-d= alt.Chart(sum_situations).mark_area().encode(
+d= alt.Chart(sum_situations).mark_area(opacity =0.5).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
                                                                   y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
                                                                   color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
@@ -531,7 +531,7 @@ st.altair_chart(d,use_container_width=True)
 
 st.markdown('Growth rate in last 20 days')
 
-d= alt.Chart(sum_situations_cropped).mark_area().encode(
+d= alt.Chart(sum_situations_cropped).mark_area(opacity =0.5).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
                                                                   y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
                                                                   color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
