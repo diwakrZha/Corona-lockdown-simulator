@@ -55,22 +55,20 @@ df_corona = df_corona.rename({'value': 'Count', 'variable': 'Situation'}, axis=1
 sum_situations= df_corona.groupby(['Situation', 'Date'],as_index=False).agg({'Count':'sum'})
 
 #calculate change 
-sum_situations['changeRatio'] = sum_situations['Count'].pct_change(fill_method = 'pad') 
+sum_situations['changeRatio'] = sum_situations['Count'].pct_change(periods=2, fill_method='pad', limit=None, freq=None) 
 
 #clipping values below zero
 sum_situations.changeRatio=sum_situations.changeRatio.mask(sum_situations.changeRatio.lt(0),'NaN')
 #sum_situations = sum_situations.replace(np.nan, '', regex=True)
 
-# In[10]:
-
 #Lets average across 5 days
 window_size= 5 #moving mean using 5 days data to remove jumps
-sum_situations['movingMean_of_Change'] = (sum_situations['changeRatio'].rolling(min_periods=4, center=True, window=window_size)).mean()
+sum_situations['movingMean_of_Change'] = (sum_situations['changeRatio'].rolling(min_periods=1, center=True, window=window_size)).mean()
 
 
 # In[11]:
 #Moving average date for last 15 days
-goBackby = 15 #days
+goBackby = 20 #days
 start_date2 = sum_situations.iloc[-goBackby:]['Date'].values[0]
 mask = (sum_situations['Date'] >= start_date2) & (sum_situations['Date']  <= end_date)
 sum_situations_cropped = sum_situations.loc[mask]
@@ -177,7 +175,7 @@ else:
     yAxisName= ('COUNT (log. scale)')
 
 
-st.write('The blue line should bend down if social distancing is working')
+st.write('To reduce deaths, hills should spread out & the blue line should bend down')
 #mk0=('<span style="color:#E24668;font-weight: bold; font-size: 100%">Slide to take the hills away from blue snake</span>')
 #st.markdown(mk0,unsafe_allow_html=True)
 
@@ -191,7 +189,7 @@ else:
     
 projectionDays=projVal#st.sidebar.number_input('Days to project in future', min_value=5, max_value=2000, value=projVal, step=10,key=None)
 ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=29.2,key=None)
-rateICU=float(st.sidebar.number_input('Critical illness rate [%]', min_value=0.05, max_value=100.0, value=1.0, step=0.05,key=None))
+rateICU=float(st.sidebar.number_input('Critical illness rate [~ 0.7 to 6 %]', min_value=0.05, max_value=100.0, value=1.0, step=0.05,key=None))
 rateICU=rateICU/100
 #st.sidebar.markdown("Select log to show critical cases")        
       
@@ -312,10 +310,10 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
 #    st.write(poptimal_exponentialC)
 
 
-    return OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, OnlyDeaths
+    return selectedCountry, OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, OnlyDeaths, df_corona_country
 
 #call contactFunction
-OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, OnlyDeaths=getContactFunc(Contacts,selectedCountry, ICUbeds)
+selectedCountry, OnlyConfirmed, OnlyExpected, OnlyCritical,df_corona_country_cropped, tidy_df_model, totalICUbeds, population, start_date3, OnlyDeaths, df_corona_country=getContactFunc(Contacts,selectedCountry, ICUbeds)
 #insert this for a horizontal line indicating ICUs in the country
 scaleFactorC = 0.006
 scaleFactor = 0.555
@@ -335,7 +333,7 @@ rowForDispay3=OnlyConfirmed[OnlyConfirmed['Count']==OnlyConfirmed['Count'].max()
 confirmedPeakCount=np.str(np.int(rowForDispay3.Count.max()))
 confirmedPeakDate = np.str(rowForDispay3.Date.dt.date.max())
 
-mk1=(f'<span style="color:#F99E4C;font-weight: bold; font-size: 100%">Infected: ~{infectedPeakCount}</span>'+f'<div><span style="color:#EF4648;font-weight: bold; font-size: 100%">Critical: ~{criticalPeakCount}</span></div>'+f'<div><span style="color:#26272F;font-weight: bold; font-size: 100%">Peaks on: {infectedPeakDate}</span></div> ')
+mk1=(f'<span style="color:#F99E4C;font-weight: bold; font-size: 100%">Infections: ~{infectedPeakCount}</span>'+f'<div><span style="color:#EF4648;font-weight: bold; font-size: 100%">Critical: ~{criticalPeakCount}</span></div>'+f'<div><span style="color:#26272F;font-weight: bold; font-size: 100%">Peaks on: {infectedPeakDate}</span></div> ')
 
 expectedChartTitle_placeholder.markdown(mk1,unsafe_allow_html=True)
 
@@ -344,12 +342,13 @@ Total_dead = OnlyDeaths.max()
 if np.isnan(Total_dead):
     Total_dead =0 # until now
 
+OnlyConfirmed ['newCases'] = OnlyConfirmed.Count.diff()
 try:
     two_weeks_ago = pd.to_datetime(end_date) - timedelta(weeks = 2) #correct formula for CFR
-    CFR=(Total_dead/(OnlyConfirmed.loc[OnlyConfirmed["Date"] == two_weeks_ago, "Count"]).iloc[0])*100
-    CFR = np.around(CFR,decimals=2)
+    CFR=(np.around(Total_dead/(OnlyConfirmed.loc[OnlyConfirmed["Date"] == two_weeks_ago, "Count"]).iloc[0],decimals=2))*100
 except:
     CFR ='NA'
+
 
 mk5=(f'<span style="color:#5677A4;font-weight: bold; font-size: 100%">Confirmed: {confirmedPeakCount}</span>'+' | 'f'<span style="color:red;font-weight: bold; font-size: 100%">Deaths: {Total_dead}</span>')
 confirmedCase_placeholder.markdown(mk5,unsafe_allow_html=True)
@@ -406,52 +405,145 @@ else:
 mk6=(f'<span style="color:red;font-weight: bold; font-size: 100%">Current crude fatality rate (T-14): {CFR}</span>')
 
 #expectedChartTitle_placeholder1.markdown(mk6,unsafe_allow_html=True)
-expectedChartTitle_placeholder2.text('⇣')
+expectedChartTitle_placeholder2.text('⇣') #F99E4C
 
 countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=True, size =5, opacity=0.9).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date',format = ("%b %Y"))),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
-                                                                  color = alt.Color('Situation:N', legend = alt.Legend(title = '',orient ='bottom',labelFontSize=12)),
+                                                                  color = alt.Color('Situation:N', 
+                                                                                    scale=alt.Scale(domain=['Confirmed', 'Expected','Critical'],
+                                                                                                    range=['#5677A4', '#F99E4C','#EF4648']),
+                                                                                    legend = alt.Legend(title = '',orient ='bottom',labelFontSize=12)),
                                                                   tooltip=['Date', 'Count']
                                                                  ).interactive().configure(background='transparent')
 
 
 fitChart_placeholder.altair_chart(countryPlot,use_container_width=True)
 
-# ICULine = alt.Chart(df_corona_country_cropped).mark_rule(color="red", strokeDash=[2, 1]).encode(
-#     y="ICUs:Q",
-#     size=alt.value(3)
-# )
+df_corona_countryChange = df_corona_country.copy()
+#calculate change 
+df_corona_countryChange['changeRatio'] = df_corona_countryChange['Count'].pct_change(periods=2, fill_method='pad', limit=None, freq=None) 
+
+#clipping values below zero
+df_corona_countryChange.changeRatio=df_corona_countryChange.changeRatio.mask(df_corona_countryChange.changeRatio.lt(0),'NaN')
+#sum_situations = sum_situations.replace(np.nan, '', regex=True)
+
+#Lets average across 5 days
+window_size= 5 #moving mean using 5 days data to remove jumps
+df_corona_countryChange['movingMean_of_Change'] = (df_corona_countryChange['changeRatio'].rolling(min_periods=1, center=True, window=window_size)).mean()
+
+
+# In[11]:
+#Moving average date for last 15 days
+goBackby = 20#days
+start_date2 = df_corona_countryChange.iloc[-goBackby:]['Date'].values[0]
+mask = (df_corona_countryChange['Date'] >= start_date2) & (df_corona_countryChange['Date']  <= end_date)
+df_corona_country_croppedChange = df_corona_countryChange.loc[mask]
+
 
 #st.altair_chart(points, use_container_width=True)
-st.markdown('Global Growth:')
+st.markdown('**Country specific growth:**')
+st.markdown(selectedCountry)
+
+
+d0= alt.Chart(df_corona_countryChange).mark_area().encode(
+                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
+                                                                  y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
+                                                                  color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
+                                                                                                    range=['#5677A4', 'red']),
+                                                                                    legend = alt.Legend(title = 'Cases', orient ='top',labelFontSize=12)),
+                                                                ).interactive()
+
+d1= alt.Chart(df_corona_countryChange[df_corona_countryChange['Situation']=='Confirmed']).mark_area(color='green', size=100, filled=True, opacity=0.1).encode(
+                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
+                                                                  y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Change')),
+                                                                  opacity=alt.Opacity('Situation', legend=alt.Legend(title="Rate", orient='right'))
+
+                                                                  #color = alt.Color(scale=alt.Scale(range=['red']), legend = alt.Legend(title = 'Rate', orient ='right',labelFontSize=12)),
+                                                                ).interactive()
+
+
+d3=(d0+d1).resolve_scale(y='independent').properties(width=300,height=400).interactive()
+st.altair_chart(d3,use_container_width=True)
+
+
+
+d0= alt.Chart(df_corona_country_croppedChange).mark_area().encode(
+                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
+                                                                  y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
+                                                                  color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
+                                                                                                    range=['#5677A4', 'red']),
+                                                                                    legend = alt.Legend(title = 'Cases', orient ='top',labelFontSize=12)),
+                                                                ).interactive()
+
+d1= alt.Chart(df_corona_country_croppedChange[df_corona_country_croppedChange['Situation']=='Confirmed']).mark_area(color='green', size=100, filled=True, opacity=0.1).encode(
+                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
+                                                                  y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Change')),
+                                                                  opacity=alt.Opacity('Situation', legend=alt.Legend(title="Rate", orient='right'))
+
+                                                                  #color = alt.Color(scale=alt.Scale(range=['red']), legend = alt.Legend(title = 'Rate', orient ='right',labelFontSize=12)),
+                                                                ).interactive()
+
+
+d3=(d0+d1).resolve_scale(y='independent').properties(width=300,height=400).interactive()
+st.altair_chart(d3,use_container_width=True)
+
+#st.markdown('**Growth rate in last 20 days**')
+#d2= alt.Chart(df_corona_country_croppedChange).mark_area().encode(
+#                                                                  x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
+#                                                                  y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Change')),
+#                                                                  color = alt.Color('Situation:N', legend = None),
+#                                                                ).properties(width=300,height=400).interactive()
+#st.altair_chart(d2,use_container_width=True)
+
+st.markdown('______________________________')
+
+#st.altair_chart(points, use_container_width=True)
+st.markdown('**Global growth:**')
+
 globalPlot= alt.Chart(sum_situations).mark_area().encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
-                                                                  color = alt.Color('Situation:N', legend = alt.Legend(title = '', orient ='top',labelFontSize=12)),
-                                                                ).properties(width=270,height=300).interactive().configure(background='transparent')
-
+                                                                  color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
+                                                                                                    range=['#5677A4', 'red']),
+                                                                                    legend = alt.Legend(title = '', orient ='top',labelFontSize=12)),
+                                                                ).properties(width=300,height=400).interactive()
+    
 st.altair_chart(globalPlot,use_container_width=True)
 
 
-st.markdown('Change:')
+
+
+st.markdown('**Growth rate:**')
+st.write('Wuhan, China went into a complete lockdown on 23rd of january, the infection growth rate fell to minimum on ~26th February. It increased again because other parts of the world were still open. In mid of March, most countries outside of China implemented a lockdown as well and now after two weeks we see a slow down again. The lockdown seems to be working!')
+
 d= alt.Chart(sum_situations).mark_area().encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
-                                                                  y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Change')),
-                                                                  color = alt.Color('Situation:N', legend = None),
-                                                                ).properties(width=270,height=300).interactive().configure(background='transparent')
+                                                                  y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
+                                                                  color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
+                                                                                                    range=['#5677A4', 'red']),
+                                                                                    legend = alt.Legend(title = '', orient ='top',labelFontSize=12)),
+                                                                ).properties(width=300,height=400).interactive()
 st.altair_chart(d,use_container_width=True)
 
-st.markdown('Change in last 15 days')
+    
+
+
+st.markdown('Growth rate in last 20 days')
+
 d= alt.Chart(sum_situations_cropped).mark_area().encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
-                                                                  y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Change')),
-                                                                  color = alt.Color('Situation:N', legend = None),
-                                                                ).properties(width=270,height=300).interactive().configure(background='transparent')
+                                                                  y = alt.Y('movingMean_of_Change:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
+                                                                  color = alt.Color('Situation:N', scale=alt.Scale(domain=['Confirmed', 'Deaths'],
+                                                                                                    range=['#5677A4', 'red']),
+                                                                                    legend = alt.Legend(title = '', orient ='top',labelFontSize=12)),
+                                                                ).properties(width=300,height=400).interactive()
 st.altair_chart(d,use_container_width=True)
 
 
-st.markdown('I am not an epidemiologist but a physicist with mathematical modelling and data expertise. If you have corrections and/or want improvements please')
+st.markdown('______________________________')
+
+st.markdown('I am a physicist with mathematical modelling and data expertise not an epidemiologist. This tool only visualizes projection from mathematical model using existing data. If you have corrections and/or want improvements please')
 mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">Get in touch</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
