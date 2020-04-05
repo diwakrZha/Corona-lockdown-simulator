@@ -68,7 +68,7 @@ sum_situations['movingMean_of_Change'] = (sum_situations['changeRatio'].rolling(
 
 # In[11]:
 #Moving average date for last 15 days
-goBackby = 20 #days
+goBackby = 20#days
 start_date2 = sum_situations.iloc[-goBackby:]['Date'].values[0]
 mask = (sum_situations['Date'] >= start_date2) & (sum_situations['Date']  <= end_date)
 sum_situations_cropped = sum_situations.loc[mask]
@@ -155,7 +155,6 @@ LockDate_placeholder = st.sidebar.empty()
 
 st.sidebar.markdown('**Calibrate model to confirmed data**')
 fitChart_placeholder = st.sidebar.empty()
-
 ListCountries = df_corona['Country/Region'].unique().tolist()
 defCountry= ListCountries.index('Germany')
 selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
@@ -206,7 +205,12 @@ def exponential(x, a, k, b):
 
 def getContactFunc(Contacts, selectedCountry, ICUbeds):
     
-    population = getPopulation.get_population(selectedCountry)
+    try:
+        population = getPopulation.get_population(selectedCountry)
+    except:
+        st.write("**ERROR: No population data found!**")
+        st.write("**Please send me the name of your country so that I can include it and/or insert population manually:**")
+        population=st.number_input('Acute care units(ICUs) per 100k', min_value=1, max_value=8000000000, value=1000000,key=None)
     
     #Specific country data
     df_corona_country=selectCountry(selectedCountry, df_corona)
@@ -405,9 +409,9 @@ else:
 mk6=(f'<span style="color:red;font-weight: bold; font-size: 100%">Current crude fatality rate (T-14): {CFR}</span>')
 
 #expectedChartTitle_placeholder1.markdown(mk6,unsafe_allow_html=True)
-expectedChartTitle_placeholder2.text('⇣') #F99E4C
+#expectedChartTitle_placeholder2.text('⇣') #F99E4C
 
-countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=True, size =5, opacity=0.6).encode(
+countryPlot= alt.Chart(df_corona_country_cropped).mark_line(clip=True, point=True, size =5, opacity=0.5).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date',format = ("%b %Y"))),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
                                                                   color = alt.Color('Situation:N', 
@@ -435,11 +439,11 @@ df_corona_countryChange['movingMean_of_Change'] = (df_corona_countryChange['chan
 
 # In[11]:
 #Moving average date for last 15 days
-goBackby = 20#days
 start_date2 = df_corona_countryChange.iloc[-goBackby:]['Date'].values[0]
 mask = (df_corona_countryChange['Date'] >= start_date2) & (df_corona_countryChange['Date']  <= end_date)
 df_corona_country_croppedChange = df_corona_countryChange.loc[mask]
 
+st.markdown('______________________________')
 
 #st.altair_chart(points, use_container_width=True)
 st.markdown('**Country specific growth:**')
@@ -468,6 +472,7 @@ st.altair_chart(d3,use_container_width=True)
 
 st.markdown('**Growth rate in last 20 days:**')
 
+
 d0= alt.Chart(df_corona_country_croppedChange).mark_area(opacity =0.5).encode(
                                                                   x = alt.X('Date:T', axis = alt.Axis(title = 'Date')),
                                                                   y = alt.Y('Count:Q', axis = alt.Axis(title = 'Count',format = ("~s"))),
@@ -487,6 +492,9 @@ d1= alt.Chart(df_corona_country_croppedChange[df_corona_country_croppedChange['S
 
 d3=(d0+d1).resolve_scale(y='independent').properties(width=300,height=400).interactive()
 st.altair_chart(d3,use_container_width=True)
+
+st.write('If the green area has a downward slope approximately 14 days after a lockdown date, then the lockdown is working!')
+
 
 #st.markdown('**Growth rate in last 20 days**')
 #d2= alt.Chart(df_corona_country_croppedChange).mark_area().encode(
@@ -543,7 +551,7 @@ st.altair_chart(d,use_container_width=True)
 
 st.markdown('______________________________')
 
-st.markdown('I am a physicist with mathematical modelling and data expertise not an epidemiologist. This tool only visualizes projection from mathematical model using existing data. If you have corrections and/or want improvements please')
+st.markdown('I am a physicist with mathematical modelling and data expertise not an epidemiologist. This tool only visualizes projection from mathematical model using existing data. It\'s not for health advice. If you have corrections and/or want improvements I would love to collaborate:')
 mk4=('<a href="https://www.linkedin.com/in/diwakerzha/" target="_blank">Get in touch</a>')
 st.markdown(mk4,unsafe_allow_html=True)
 
