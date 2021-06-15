@@ -25,8 +25,9 @@ def pad(iterable, size, padding=None):
    return islice(pad_infinite(iterable, padding), size)
 
 st.title('Corona Lockdown')
-
-
+st.markdown('The webapp was created with a single SEIR function useful for early days. This does not represent a transient and varying degree of lockdowns now. A sum of multiple SEIR functions with a range of parameters, either learned or obtained from a fit to observed data may give a better estimate. Here is the source code if you want to improve this :)')
+mk4=('<a href="https://github.com/DiwakerJha/Corona-lockdown-simulator" target="_blank">Github repo</a>')
+st.markdown(mk4,unsafe_allow_html=True)
 
 #Downloading data from JHU repository
 @st.cache
@@ -37,7 +38,7 @@ def downloadData():
 df_corona=downloadData()
 
 df_corona= df_corona.groupby(['Country/Region', 'Date'],as_index=False).sum()
-df_corona=df_corona.drop(['Lat', 'Long'], axis=1)
+#df_corona=df_corona.drop(['Lat', 'Long'], axis=1)
 
 df_corona = pd.melt(df_corona, id_vars=['Country/Region', 'Date'], value_vars=['Confirmed', 'Deaths'])
 
@@ -159,10 +160,10 @@ ListCountries = df_corona['Country/Region'].unique().tolist()
 defCountry= ListCountries.index('Germany')
 selectedCountry= st.selectbox("Country: ",ListCountries,index=defCountry)
 
-S=st.sidebar.slider('Calibration: bring \"Confirmed\" & \"Expected\" closer', min_value=4.5, max_value=40.0, value=20.50, step=0.5, format=None)
+S=st.sidebar.slider('Calibration: bring \"Confirmed\" & \"Expected\" closer', min_value=4.0, max_value=40.0, value=4.90, step=0.1, format=None)
 confirmedCase_placeholder = st.empty()
 
-Contacts=st.slider('< Less - | Social interactions [a.u.] | - More >', min_value=4.5, max_value=40.0, value=S, step=0.5, format=None)
+Contacts=st.slider('< Less - | Social interactions [a.u.] | - More >', min_value=4.0, max_value=40.0, value=S, step=0.1, format=None)
 
 criticalOnly=st.checkbox('Only Show estimate for critically ill')
 
@@ -188,7 +189,7 @@ else:
     
 projectionDays=projVal#st.sidebar.number_input('Days to project in future', min_value=5, max_value=2000, value=projVal, step=10,key=None)
 ICUbeds=st.sidebar.number_input('Acute care units(ICUs) per 100k', min_value=0.0, max_value=10000.0, value=29.2,key=None)
-rateICU=float(st.sidebar.number_input('Critical illness rate [~ 0.7 to 6 %]', min_value=0.05, max_value=100.0, value=1.0, step=0.05,key=None))
+rateICU=float(st.sidebar.number_input('Critical illness rate [~ 0.5 to 6 %]', min_value=0.05, max_value=100.0, value=1.0, step=0.05,key=None))
 rateICU=rateICU/100
 #st.sidebar.markdown("Select log to show critical cases")        
       
@@ -216,7 +217,8 @@ def getContactFunc(Contacts, selectedCountry, ICUbeds):
     df_corona_country=selectCountry(selectedCountry, df_corona)
     #st.write(df_corona_country)
     #assign new date to see the effect of lockdown
-    start_date3= LockDate_placeholder.selectbox("Choose the lockdown date",df_corona_country['Date'].unique().tolist(),index=0)       
+    gobackdate = len(df_corona_country['Date'].unique().tolist())
+    start_date3= LockDate_placeholder.selectbox("Choose lockdown date",df_corona_country['Date'].unique().tolist(),index=gobackdate-220)       
     
     df_corona_countryConf, Total_recovered, Total_recovered_Lockdownt0, D0, Total_confirmed_Lockdownt0, OnlyDeaths=\
         retrieveParameters(df_corona_country,start_date3)
