@@ -15,7 +15,12 @@ The webapp was created with a single SEIR function, which is useful for early da
  9. Now move the "Contacts" slider on the main UI page to estimate how long this may last and how many can get critically ill.
  10. Kepp safe everyone.
  
-The app is using data repository from John Hopkins University.
+The app is using data from John Hopkins University's public repository.
+
+Here is my article on medium that uses this repository:
+https://diwaker-phd.medium.com/how-long-will-the-corona-lockdown-last-8f23ef1730aa
+
+
 
 I was inspired from these repositories:
 
