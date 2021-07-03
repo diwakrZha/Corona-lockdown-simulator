@@ -10,10 +10,9 @@ The webapp was created with a single SEIR function, which is useful for early da
  4. Chart shows the "Expected" infections from the SIR model and real world "Confirmed" infections.
  5. Move the slider so that the circles for Expected and Confirmed come as close as possible to eachother (I will later replace this with curve_fit).
  6. The value will automatically be transferred to the main UI window "Contacts" slider.
- 7. The value will automatically be transferred to the main UI window "Contacts" slider.
- 8. Italy's original (before lockdown),the number for contacts was ~19 (compare how this compares with the number of "Contacts" after lockdown)
- 9. Now move the "Contacts" slider on the main UI page to estimate how long this may last and how many can get critically ill.
- 10. Kepp safe everyone.
+ 7. Italy's original (before lockdown),the number for contacts was ~19 (compare how this compares with the number of "Contacts" after lockdown)
+ 8. Now move the "Contacts" slider on the main UI page to estimate how long this may last and how many can get critically ill.
+ 9. Be safe everyone.
  
 The app is using data from John Hopkins University's public repository.
 
